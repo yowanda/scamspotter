@@ -150,15 +150,27 @@ function check(){
     const m=text.match(p.re);
     if(m) hits.push({...p, matched:m[0]});
   }
-  // Lookalike / typosquat domain: brand name with digit-substitution, or
-  // brand + extra words, in a domain that is NOT the brand's real domain.
+  // Lookalike / typosquat domain. Compare the RAW domain (not the normalized
+  // one) against the brand's real domain: normalizing paypa1.com to paypal.com
+  // and then comparing made the typosquat look identical to the real domain.
+  // Flag when the first label is within edit distance 2 of a brand after
+  // leet-normalization (paypa1, g00gle, arnazon), when it is brand + '-' +
+  // lure word (paypal-secure), or when the brand appears as a label of a
+  // domain that is not the brand's own (paypal.com.evil.com). A domain that
+  // merely contains the brand as a substring (applepie.com) is NOT flagged.
   const BRANDS=['paypal','google','apple','amazon','microsoft','facebook','instagram','netflix','whatsapp','telegram','binance','coinbase','chase','wellsfargo'];
   const norm=s=>s.toLowerCase().replace(/0/g,'o').replace(/1/g,'l').replace(/3/g,'e').replace(/5/g,'s').replace(/@/g,'a').replace(/\$/g,'s');
+  const lev=(a,b)=>{const dp=Array.from({length:b.length+1},(_,j)=>j);for(let i=1;i<=a.length;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=b.length;j++){const t=dp[j];dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=t;}}return dp[b.length];};
   const domains=[...(text.match(/https?:\/\/([^\s\/'"]+)/gi)||[])].map(u=>u.replace(/^https?:\/\//i,'').split('/')[0].toLowerCase());
   for(const d of domains){
-    const dn=norm(d);
+    const first=d.split('.')[0];
+    const fn=norm(first);
     for(const b of BRANDS){
-      if(dn.includes(b) && dn!==b+'.com' && !dn.endsWith('.'+b+'.com')){
+      const isRealDomain = d===b+'.com' || d.endsWith('.'+b+'.com');
+      const typo = first!==b && lev(fn,b)<=2;
+      const hyphenLure = fn.startsWith(b+'-');
+      const brandLabelElsewhere = first===b && !isRealDomain;
+      if(!isRealDomain && (typo || hyphenLure || brandLabelElsewhere)){
         hits.push({n:'Lookalike domain',w:30,ex:'The link pretends to be '+b+' but the address is not the real '+b+' site. Look closely: letters are swapped for digits or extra words are added.',matched:d});
         break;
       }
