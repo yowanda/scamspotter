@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScamSpotter — Paste the suspicious message. Know in seconds if it's a scam.</title>
+<meta name="description" content="ScamSpotter checks a suspicious SMS, email, WhatsApp or DM against common scam patterns and tells you what to do next.">
+<style>
+:root{--red:#b42318;--redbg:#fdecea;--amber:#8a5a00;--amberbg:#fff4d6;--green:#146c43;--greenbg:#e6f4ea;--ink:#1a1a1a;--muted:#5c5c5c;--line:#e2e2e2;--brand:#1d4ed8;--branddark:#153a9e}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:#f7f7f5;line-height:1.55}
+a{color:var(--brand)}:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+header{background:#101828;color:#fff;padding:28px 16px 22px;text-align:center}
+header h1{margin:0 0 6px;font-size:1.7rem}header p{margin:0;opacity:.85;max-width:640px;margin-inline:auto}
+.disclaimer{background:#fff8e1;border-bottom:1px solid #f5d98b;color:#5c4a00;font-size:.85rem;padding:10px 16px;text-align:center}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+label{font-weight:700;display:block;margin-bottom:8px}
+textarea{width:100%;min-height:140px;border:1.5px solid #c9c9c9;border-radius:10px;padding:12px;font:inherit;resize:vertical}
+textarea:focus{border-color:var(--brand);outline:none}
+.samples{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.samples button{border:1px solid var(--brand);background:#eef2ff;color:var(--brand);border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer}
+.samples button:hover{background:#dbe4ff}
+.btn-primary{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:13px 22px;font:inherit;font-size:1rem;font-weight:700;cursor:pointer;width:100%}
+.btn-primary:hover{background:var(--branddark)}
+.btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}
+#verdict{border-radius:14px;padding:18px;margin-bottom:16px;display:none}
+#verdict.scam{background:var(--redbg);border:2px solid var(--red)}
+#verdict.susp{background:var(--amberbg);border:2px solid var(--amber)}
+#verdict.ok{background:var(--greenbg);border:2px solid var(--green)}
+#verdict h2{margin:0 0 4px;font-size:1.35rem}
+#verdict.scam h2{color:var(--red)}#verdict.susp h2{color:var(--amber)}#verdict.ok h2{color:var(--green)}
+.score{font-size:.95rem;color:var(--muted)}
+.scorebar{height:10px;background:#e5e5e5;border-radius:999px;overflow:hidden;margin:10px 0}
+.scorebar div{height:100%;border-radius:999px}
+.flag{border-top:1px solid var(--line);padding:10px 0}
+.flag:first-of-type{border-top:0}
+.flag strong{display:block}
+.flag span{color:var(--muted);font-size:.9rem}
+.flag code{background:#f1f1f1;border-radius:5px;padding:1px 6px;font-size:.85rem;word-break:break-all}
+.checklist{list-style:none;padding:0;margin:0}
+.checklist li{padding:8px 0 8px 28px;position:relative;border-top:1px solid var(--line)}
+.checklist li:first-child{border-top:0}
+.checklist li::before{content:"✓";position:absolute;left:4px;font-weight:700;color:var(--green)}
+.muted{color:var(--muted);font-size:.9rem}
+.badge{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:3px 10px;background:#eef2ff;color:var(--brand);margin-left:8px;vertical-align:middle}
+details{margin-top:12px}summary{cursor:pointer;font-weight:700}
+.ai-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ai-row input{flex:1;min-width:180px;border:1.5px solid #c9c9c9;border-radius:10px;padding:10px;font:inherit}
+#aiResult{margin-top:12px;display:none}
+footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:.85rem}
+@media(min-width:640px){header h1{font-size:2.1rem}.btn-primary{width:auto}}
+</style>
+</head>
+<body>
+<header>
+<h1>🛡️ ScamSpotter</h1>
+<p>Paste the suspicious message. Know in seconds if it's a scam.</p>
+</header>
+<div class="disclaimer">This tool flags suspicious patterns. It cannot guarantee a message is safe. When in doubt, verify through the official app or number.</div>
+<main>
+<div class="card">
+<label for="msg">Suspicious message</label>
+<textarea id="msg" placeholder="Paste the SMS, email, WhatsApp or DM here…"></textarea>
+<div class="samples" aria-label="Try a sample">
+<button type="button" data-sample="delivery">Sample: fake delivery SMS</button>
+<button type="button" data-sample="prize">Sample: prize scam</button>
+<button type="button" data-sample="bank">Sample: bank phishing</button>
+<button type="button" data-sample="legit">Sample: legit message</button>
+</div>
+<button class="btn-primary" id="checkBtn" type="button">Check this message</button>
+<p class="muted" style="margin:10px 0 0">Nothing leaves your browser. The check runs entirely on your device.</p>
+</div>
+
+<section id="verdict" aria-live="polite" aria-atomic="true">
+<h2 id="verdictTitle"></h2>
+<p class="score" id="verdictScore"></p>
+<div class="scorebar"><div id="scoreFill"></div></div>
+<div id="flagList"></div>
+<h3>What to do</h3>
+<ul class="checklist" id="todoList"></ul>
+<details>
+<summary>Optional: AI second opinion</summary>
+<p class="muted">Add your own Gemini API key (stored only in this browser). Any error falls back to the rule-based result above.</p>
+<div class="ai-row">
+<label for="apiKey" class="muted" style="width:100%">Gemini API key (optional)</label>
+<input id="apiKey" type="password" placeholder="Paste key here — saved only in this browser" autocomplete="off">
+<button class="btn-ghost" id="saveKeyBtn" type="button">Save key</button>
+<button class="btn-ghost" id="aiBtn" type="button">Ask AI second opinion</button>
+</div>
+<div id="aiResult"></div>
+</details>
+</section>
+
+<div class="card">
+<h2 style="margin-top:0">How it works</h2>
+<p>ScamSpotter compares your message against <strong>10 red-flag patterns</strong> used by real scams: fake urgency, prize/lottery bait, impersonation of banks or delivery firms, password phishing, suspicious links, payment pressure (gift cards, crypto, wire transfer), too-good-to-be-true money claims, and threats or secrecy. Each match adds weight to a 0–100 risk score and is shown with a plain-English explanation, so you can see <em>why</em> it was flagged.</p>
+<p class="muted">A clean result does not prove a message is safe — scammers constantly invent new wording. If anything feels off, verify through the official app or a number you type yourself.</p>
+</div>
+</main>
+<footer>ScamSpotter is an educational tool, not a security product. It does not replace your bank's fraud team, your email provider's spam filter, or common sense.</footer>
+
+<script>
+const PATTERNS = [
+{n:"Fake urgency",w:20,ex:"Scammers rush you so you act before thinking.",re:/\b(urgent|act now|immediately|within \d+ (hours?|minutes?)|expires? (in|today)|limited time|account will be (closed|locked|suspended)|final (notice|warning)|respond (now|immediately)|last chance)\b/i},
+{n:"Prize / lottery bait",w:25,ex:"You did not enter a contest you suddenly 'won'. Prizes that demand a quick claim are bait.",re:/\b(you('ve| have)? (won|win)|congratulations|claim your prize|lottery|jackpot|winner|selected as (a )?winner|free (gift|money|iphone|prize))\b/i},
+{n:"Impersonation",w:15,ex:"The message pretends to be from a bank, a big company, or an authority to borrow their trust.",re:/\b(we are (from )?(the )?(bank|police|irs|tax office|customs|microsoft|apple|amazon|google|paypal)|this is (your )?(bank|apple|microsoft|amazon|google|paypal) (support|security|fraud|team)|official (notice|warning)|dear customer)\b/i},
+{n:"Password / credential phishing",w:25,ex:"Real banks and services never ask you to 'verify your password' through a link.",re:/\b(verify your (password|account|identity)|confirm your (password|login|credentials)|update your (password|login|payment)|login to (confirm|verify|unlock)|enter your (password|pin|otp|verification code))\b/i},
+{n:"Suspicious link / click bait",w:15,ex:"'Click here' links can hide a fake login page that steals what you type.",re:/\b(click (here|the link|to|below)|tap (here|the link)|follow (this )?link|open (the )?link)\b/i},
+{n:"Link shortener",w:20,ex:"Shortened links hide the real destination — a favourite trick for fake delivery and prize pages.",re:/\b(bit\.ly|tinyurl|t\.co|goo\.gl|short\.link|is\.gd|cutt\.ly|rebrand\.ly)\b/i},
+{n:"Suspicious link address",w:15,ex:"Scam links often use 'free', 'prize', 'secure' or 'login' in the address, or skip HTTPS.",re:/https?:\/\/[^\s]*(prize|win|free|verify|secure|login|account|gift)[^\s]*/i},
+{n:"Insecure link (http)",w:10,ex:"A login or payment page that is not HTTPS is a red flag.",re:/\bhttp:\/\//i},
+{n:"Payment pressure",w:25,ex:"Gift cards, crypto and wire transfers cannot be reversed — that is why scammers demand them.",re:/\b(gift card|bitcoin|crypto(currency)?|wire transfer|western union|send money|pay (now|immediately|with (a )?gift card))\b/i},
+{n:"Too good to be true",w:20,ex:"Guaranteed profits and hundreds of dollars a day for no work are never real.",re:/\b(guaranteed (returns|income|profit)|earn \$\d+(\/day| a day| daily)|double your money|risk-?free (profit|returns|income)|make \$\d+ (fast|quickly|from home))\b/i},
+{n:"Threats / secrecy",w:20,ex:"Threats ('police will come') and 'don't tell anyone' are meant to isolate you from help.",re:/\b(don'?t tell anyone|keep this (a )?secret|police will (come|arrest)|you will be arrested|legal action (will be taken|against you)|your (account|device) (has been|will be) (hacked|compromised))\b/i}
+];
+const SAMPLES = {
+delivery:"URGENT: Your package could not be delivered. Click here to reschedule within 24 hours or it will be returned: http://bit.ly/3xK9pQ2",
+prize:"Congratulations! You won $5,000 in our giveaway! Claim your prize within 24 hours: http://freeprize-win.com/claim",
+bank:"ALERT: Your account will be locked. Verify your password here to keep your account safe: http://bank-secure-login.com",
+legit:"Hi! Your order from Bookshop is out for delivery and should arrive today between 2 and 4 pm. You can track it in the Bookshop app."
+};
+const TODO_SCAM=["Do NOT click any link in the message.","Do NOT reply, and do NOT send money or personal details.","Verify through the official app or a number you type yourself — never the one in the message.","Report it (in your messaging app) and block the sender."];
+const TODO_OK=["No red flags found — but stay alert. If anything feels off, verify through the official app.","Never log in or pay through a link in a message you did not expect."];
+
+const msgEl=document.getElementById('msg'), verdictEl=document.getElementById('verdict'),
+titleEl=document.getElementById('verdictTitle'), scoreEl=document.getElementById('verdictScore'),
+fillEl=document.getElementById('scoreFill'), flagList=document.getElementById('flagList'),
+todoList=document.getElementById('todoList');
+
+document.querySelectorAll('[data-sample]').forEach(b=>b.addEventListener('click',()=>{
+  msgEl.value=SAMPLES[b.dataset.sample]; msgEl.focus(); check();
+}));
+
+document.getElementById('checkBtn').addEventListener('click',check);
+
+function check(){
+  const text=msgEl.value.trim();
+  verdictEl.style.display='block';
+  verdictEl.scrollIntoView({behavior:'smooth',block:'start'});
+  if(!text){
+    verdictEl.className='susp'; verdictEl.style.display='block';
+    titleEl.textContent='Paste a message first';
+    scoreEl.textContent=''; fillEl.style.width='0%';
+    flagList.innerHTML='<p class="muted">Paste the suspicious message above, or try one of the samples.</p>';
+    todoList.innerHTML=''; document.getElementById('aiResult').style.display='none';
+    return;
+  }
+  const hits=[];
+  for(const p of PATTERNS){
+    const m=text.match(p.re);
+    if(m) hits.push({...p, matched:m[0]});
+  }
+  let score=Math.min(100, hits.reduce((s,h)=>s+h.w,0));
+  let cls, title;
+  if(score>=60){cls='scam';title='Likely Scam';}
+  else if(score>=25){cls='susp';title='Suspicious — be careful';}
+  else{cls='ok';title='Looks OK';}
+  verdictEl.className=cls;
+  titleEl.innerHTML=title + (cls==='ok' ? '' : '') + ' <span class="badge">Rule-based check</span>';
+  scoreEl.textContent='Risk score: '+score+' / 100 — '+hits.length+' red flag'+(hits.length===1?'':'s')+' found.';
+  fillEl.style.width=score+'%';
+  fillEl.style.background = cls==='scam' ? 'var(--red)' : cls==='susp' ? '#d99a00' : 'var(--green)';
+  if(hits.length){
+    flagList.innerHTML=hits.map(h=>'<div class="flag"><strong>'+h.n+' (+'+h.w+')</strong><span>'+h.ex+'</span><br><span>Matched: <code>'+escapeHtml(h.matched)+'</code></span></div>').join('');
+  } else {
+    flagList.innerHTML='<p class="muted">No red-flag patterns matched. That is a good sign, not a guarantee — scammers constantly invent new wording.</p>';
+  }
+  const todos = cls==='ok' ? TODO_OK : TODO_SCAM;
+  todoList.innerHTML=todos.map(t=>'<li>'+t+'</li>').join('');
+  document.getElementById('aiResult').style.display='none';
+  return {score, cls, hits};
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+const keyInput=document.getElementById('apiKey');
+keyInput.value=localStorage.getItem('scamspotter_gemini_key')||'';
+document.getElementById('saveKeyBtn').addEventListener('click',()=>{
+  if(keyInput.value.trim()){localStorage.setItem('scamspotter_gemini_key',keyInput.value.trim());alert('Key saved in this browser only.');}
+  else{localStorage.removeItem('scamspotter_gemini_key');alert('Key removed.');}
+});
+document.getElementById('aiBtn').addEventListener('click',async()=>{
+  const key=(keyInput.value.trim()||localStorage.getItem('scamspotter_gemini_key')||'');
+  const box=document.getElementById('aiResult'); box.style.display='block';
+  if(!key){box.innerHTML='<p class="muted">Add a Gemini API key above first. Your key never leaves this browser except for the Gemini request.</p>';return;}
+  const text=msgEl.value.trim();
+  if(!text){box.innerHTML='<p class="muted">Paste a message first.</p>';return;}
+  box.innerHTML='<p class="muted">Asking Gemini…</p>';
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-goog-api-key':key},
+      body:JSON.stringify({contents:[{parts:[{text:'You are a scam-detection assistant. Read this message and reply in at most 3 short sentences: is it likely a scam, suspicious, or likely legitimate, and why? Do not claim certainty. Message: '+text}]}]})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const out=d.candidates?.[0]?.content?.parts?.map(p=>p.text).join('')||'';
+    if(!out) throw new Error('empty');
+    box.innerHTML='<p><strong>AI second opinion:</strong> '+escapeHtml(out)+'</p><p class="muted">This is a second opinion, not a verdict. The rule-based result above still stands.</p>';
+  }catch(e){
+    box.innerHTML='<p class="muted">AI second opinion unavailable (key or network issue). Rule-based result above still stands.</p>';
+  }
+});
+</script>
+</body>
+</html>
