@@ -18,10 +18,13 @@ with a clear head.
 
 Paste a suspicious message, or tap one of 4 samples (fake delivery SMS,
 prize scam, bank phishing, legit message). The rule-based engine scores the
-text 0–100 across 10 red-flag patterns — fake urgency, prize bait,
+text 0–100 across red-flag patterns — fake urgency, prize bait,
 impersonation, password phishing, suspicious links, link shorteners,
 insecure http links, payment pressure (gift cards, crypto, wire transfer),
-too-good-to-be-true money claims, and threats/secrecy. Every matched flag
+too-good-to-be-true money claims, and threats/secrecy — plus
+lookalike-domain detection (e.g. paypa1-secure.com) and combo bonuses for
+classic scam signatures (prize + urgency, phishing + urgency,
+payment + secrecy). Every matched flag
 shows its name, a plain-English explanation, and the exact phrase that
 matched. The verdict is Likely Scam, Suspicious, or Looks OK, followed by a
 "What to do" checklist: don't click, don't reply, verify through the
