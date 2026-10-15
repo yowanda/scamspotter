@@ -93,7 +93,7 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 
 <div class="card">
 <h2 style="margin-top:0">How it works</h2>
-<p>ScamSpotter compares your message against <strong>10 red-flag patterns</strong> used by real scams: fake urgency, prize/lottery bait, impersonation of banks or delivery firms, password phishing, suspicious links, payment pressure (gift cards, crypto, wire transfer), too-good-to-be-true money claims, and threats or secrecy. Each match adds weight to a 0–100 risk score and is shown with a plain-English explanation, so you can see <em>why</em> it was flagged.</p>
+<p>ScamSpotter compares your message against red-flag patterns used by real scams: fake urgency, prize/lottery bait, impersonation of banks or delivery firms, password phishing, suspicious links, payment pressure (gift cards, crypto, wire transfer), too-good-to-be-true money claims, and threats or secrecy. Each match adds weight to a 0–100 risk score and is shown with a plain-English explanation, so you can see <em>why</em> it was flagged.</p>
 <p class="muted">A clean result does not prove a message is safe — scammers constantly invent new wording. If anything feels off, verify through the official app or a number you type yourself.</p>
 </div>
 </main>
@@ -101,7 +101,7 @@ footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 
 <script>
 const PATTERNS = [
-{n:"Fake urgency",w:20,ex:"Scammers rush you so you act before thinking.",re:/\b(urgent|act now|immediately|within \d+ (hours?|minutes?)|expires? (in|today)|limited time|account will be (closed|locked|suspended)|final (notice|warning)|respond (now|immediately)|last chance)\b/i},
+{n:"Fake urgency",w:20,ex:"Scammers rush you so you act before thinking.",re:/\b(urgent|act (now|fast|quickly)|immediately|within \d+ (hours?|minutes?)|expires? (in|today)|limited time|account will be (closed|locked|suspended)|before it is (closed|locked|suspended)|final (notice|warning)|respond (now|immediately)|last chance|time (is )?running out|or (you('ll| will) )?lose|lose it forever|do it (now|today))\b/i},
 {n:"Prize / lottery bait",w:25,ex:"You did not enter a contest you suddenly 'won'. Prizes that demand a quick claim are bait.",re:/\b(you('ve| have)? (won|win)|congratulations|claim your prize|lottery|jackpot|winner|selected as (a )?winner|free (gift|money|iphone|prize))\b/i},
 {n:"Impersonation",w:15,ex:"The message pretends to be from a bank, a big company, or an authority to borrow their trust.",re:/\b(we are (from )?(the )?(bank|police|irs|tax office|customs|microsoft|apple|amazon|google|paypal)|this is (your )?(bank|apple|microsoft|amazon|google|paypal) (support|security|fraud|team)|official (notice|warning)|dear customer)\b/i},
 {n:"Password / credential phishing",w:25,ex:"Real banks and services never ask you to 'verify your password' through a link.",re:/\b(verify your (password|account|identity)|confirm your (password|login|credentials)|update your (password|login|payment)|login to (confirm|verify|unlock)|enter your (password|pin|otp|verification code))\b/i},
@@ -109,9 +109,9 @@ const PATTERNS = [
 {n:"Link shortener",w:20,ex:"Shortened links hide the real destination — a favourite trick for fake delivery and prize pages.",re:/\b(bit\.ly|tinyurl|t\.co|goo\.gl|short\.link|is\.gd|cutt\.ly|rebrand\.ly)\b/i},
 {n:"Suspicious link address",w:15,ex:"Scam links often use 'free', 'prize', 'secure' or 'login' in the address, or skip HTTPS.",re:/https?:\/\/[^\s]*(prize|win|free|verify|secure|login|account|gift)[^\s]*/i},
 {n:"Insecure link (http)",w:10,ex:"A login or payment page that is not HTTPS is a red flag.",re:/\bhttp:\/\//i},
-{n:"Payment pressure",w:25,ex:"Gift cards, crypto and wire transfers cannot be reversed — that is why scammers demand them.",re:/\b(gift card|bitcoin|crypto(currency)?|wire transfer|western union|send money|pay (now|immediately|with (a )?gift card))\b/i},
+{n:"Payment pressure",w:30,ex:"Gift cards, crypto and wire transfers cannot be reversed — that is why scammers demand them.",re:/\b(gift ?cards?|steam card|apple gift card|google play card|target gift card|itunes card|bitcoin|crypto(currency)?|crypto wallet|wire transfer|western union|send (money|us (money|crypto)|me (money|crypto))|pay (now|immediately|with (a )?gift card))\b/i},
 {n:"Too good to be true",w:20,ex:"Guaranteed profits and hundreds of dollars a day for no work are never real.",re:/\b(guaranteed (returns|income|profit)|earn \$\d+(\/day| a day| daily)|double your money|risk-?free (profit|returns|income)|make \$\d+ (fast|quickly|from home))\b/i},
-{n:"Threats / secrecy",w:20,ex:"Threats ('police will come') and 'don't tell anyone' are meant to isolate you from help.",re:/\b(don'?t tell anyone|keep this (a )?secret|police will (come|arrest)|you will be arrested|legal action (will be taken|against you)|your (account|device) (has been|will be) (hacked|compromised))\b/i}
+{n:"Threats / secrecy",w:25,ex:"Threats ('police will come') and 'don't tell anyone' are meant to isolate you from help.",re:/\b(do(n'?t| not) tell anyone|tell (no ?one|nobody)|keep (it|this) (a )?secret|police (will|are going to) (come|arrest)|you will be arrested|arrest warrant|legal action (will be taken|against you)|your (account|device) (has been|will be) (hacked|compromised))\b/i}
 ];
 const SAMPLES = {
 delivery:"URGENT: Your package could not be delivered. Click here to reschedule within 24 hours or it will be returned: http://bit.ly/3xK9pQ2",
@@ -149,6 +149,34 @@ function check(){
   for(const p of PATTERNS){
     const m=text.match(p.re);
     if(m) hits.push({...p, matched:m[0]});
+  }
+  // Lookalike / typosquat domain: brand name with digit-substitution, or
+  // brand + extra words, in a domain that is NOT the brand's real domain.
+  const BRANDS=['paypal','google','apple','amazon','microsoft','facebook','instagram','netflix','whatsapp','telegram','binance','coinbase','chase','wellsfargo'];
+  const norm=s=>s.toLowerCase().replace(/0/g,'o').replace(/1/g,'l').replace(/3/g,'e').replace(/5/g,'s').replace(/@/g,'a').replace(/\$/g,'s');
+  const domains=[...(text.match(/https?:\/\/([^\s\/'"]+)/gi)||[])].map(u=>u.replace(/^https?:\/\//i,'').split('/')[0].toLowerCase());
+  for(const d of domains){
+    const dn=norm(d);
+    for(const b of BRANDS){
+      if(dn.includes(b) && dn!==b+'.com' && !dn.endsWith('.'+b+'.com')){
+        hits.push({n:'Lookalike domain',w:30,ex:'The link pretends to be '+b+' but the address is not the real '+b+' site. Look closely: letters are swapped for digits or extra words are added.',matched:d});
+        break;
+      }
+    }
+    if(hits.some(h=>h.n==='Lookalike domain')) break;
+  }
+  // Combo bonus: prize bait + urgency together is the classic prize-scam signature.
+  const names=new Set(hits.map(h=>h.n));
+  if(names.has('Prize / lottery bait') && names.has('Fake urgency')){
+    hits.push({n:'Prize + urgency combo',w:20,ex:'A "prize" that must be claimed urgently is the textbook prize-scam pattern — the rush stops you checking whether the prize is real.',matched:'prize + urgency'});
+  }
+  // Combo bonus: credential phishing + urgency is the classic phishing signature.
+  if(names.has('Password / credential phishing') && names.has('Fake urgency')){
+    hits.push({n:'Phishing + urgency combo',w:20,ex:'"Verify your password NOW" is the classic phishing signature — the rush stops you checking whether the sender is real.',matched:'credential + urgency'});
+  }
+  // Combo bonus: unusual payment + threats/secrecy is the classic fine/arrest scam.
+  if(names.has('Payment pressure') && names.has('Threats / secrecy')){
+    hits.push({n:'Payment + secrecy combo',w:15,ex:'Being told to pay an unusual way AND keep it secret is the classic fine/arrest scam — real authorities never work like this.',matched:'payment + secrecy'});
   }
   let score=Math.min(100, hits.reduce((s,h)=>s+h.w,0));
   let cls, title;
