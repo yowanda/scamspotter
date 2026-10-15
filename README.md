@@ -1,10 +1,12 @@
 # ScamSpotter — Paste the suspicious message. Know in seconds if it's a scam.
 
 Scam messages work because they rush you. ScamSpotter slows the moment down:
-paste the SMS, email, WhatsApp or DM, and it checks the text against 10
+paste the SMS, email, WhatsApp or DM, and it checks the text against the
 red-flag patterns real scams use — fake urgency, prize bait, impersonation,
 password phishing, suspicious links, payment pressure, too-good-to-be-true
-money claims, and threats — then shows a verdict, a 0–100 risk score, every
+money claims, and threats — plus lookalike-domain detection (paypa1-secure.com)
+and scam-signature combos (prize + urgency, phishing + urgency, payment +
+secrecy) — then shows a verdict, a 0–100 risk score, every
 matched flag with a plain-English explanation, and a "What to do" checklist.
 
 Built for the Next Byte Hacks V5 hackathon (judged on real-world Impact).

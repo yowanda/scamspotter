@@ -1,0 +1,5 @@
+# Screenshots / local artifacts (regenerable, never committed)
+cover.png
+*.log
+.DS_Store
+Thumbs.db
